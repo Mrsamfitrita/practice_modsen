@@ -1,0 +1,103 @@
+CREATE DATABASE IF NOT EXISTS hotel_booking;
+USE hotel_booking;
+
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('ADMIN', 'HOTEL_MANAGER', 'CUSTOMER') NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE hotels (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    rating DECIMAL(2,1) DEFAULT 0.0,
+    manager_id BIGINT NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_hotel_manager
+        FOREIGN KEY (manager_id)
+        REFERENCES users(id),
+
+    CONSTRAINT uq_hotel_city_name
+        UNIQUE (name, city)
+);
+
+CREATE TABLE rooms (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    hotel_id BIGINT NOT NULL,
+
+    room_type ENUM(
+        'SINGLE',
+        'DOUBLE',
+        'SUITE',
+        'DELUXE'
+    ) NOT NULL,
+
+    price_per_night DECIMAL(10,2) NOT NULL,
+    capacity INT NOT NULL,
+    description TEXT,
+    amenities TEXT,
+    area DECIMAL(8,2),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_room_hotel
+        FOREIGN KEY (hotel_id)
+        REFERENCES hotels(id)
+);
+
+CREATE TABLE bookings (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id BIGINT NOT NULL,
+    room_id BIGINT NOT NULL,
+
+    check_in_date DATE NOT NULL,
+    check_out_date DATE NOT NULL,
+
+    total_price DECIMAL(12,2) NOT NULL,
+
+    status ENUM(
+        'CREATED',
+        'CONFIRMED',
+        'CANCELLED',
+        'COMPLETED'
+    ) NOT NULL DEFAULT 'CREATED',
+
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_booking_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id),
+
+    CONSTRAINT fk_booking_room
+        FOREIGN KEY (room_id)
+        REFERENCES rooms(id)
+);
+
+CREATE TABLE loyalty_program (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id BIGINT NOT NULL UNIQUE,
+
+    total_points INT NOT NULL DEFAULT 0,
+
+    tier ENUM(
+        'BRONZE',
+        'SILVER',
+        'GOLD',
+        'PLATINUM'
+    ) NOT NULL DEFAULT 'BRONZE',
+
+    total_spent DECIMAL(12,2) NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_loyalty_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+);
